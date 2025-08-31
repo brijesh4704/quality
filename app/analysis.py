@@ -36,3 +36,20 @@ def defect_comparison(defects_today: dict[str,int], defects_prev: dict[str,int])
         b = int(defects_today.get(k, 0))
         rows.append({'defect': k, 'prev': a, 'today': b, 'diff': b - a})
     return rows
+# app/analysis.py
+from app.database import SessionLocal
+from app import models
+
+def get_dashboard_data():
+    """Summarize key data for the dashboard"""
+    db = SessionLocal()
+    vehicles_count = db.query(models.Vehicle).count()
+    dpc_count = db.query(models.DPCRecord).count()
+    rsp_count = db.query(models.RSPRecord).count()
+    db.close()
+    return {
+        "vehicles": vehicles_count,
+        "dpc": dpc_count,
+        "rsp": rsp_count
+    }
+

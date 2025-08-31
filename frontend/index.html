@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QICS - Login</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <img src="assets/logo.png" alt="logo" class="login-logo" onerror="this.style.display='none'">
+      <h1>QICS</h1>
+      <p class="muted">Quality Information Control System</p>
+
+      <form id="loginForm">
+        <label>Username</label>
+        <input id="username" type="text" required />
+        <label>Password</label>
+        <input id="password" type="password" required />
+        <button class="btn" type="submit">Login</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

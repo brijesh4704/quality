@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QICS - Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <img src="assets/logo.png" alt="logo" class="logo" onerror="this.style.display='none'">
+      <div>
+        <h1>Quality Information Control System</h1>
+        <div class="muted">VIN-wise Quality Data Integration</div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div id="welcomeUser" class="welcome"></div>
+      <button id="logoutBtn" class="logout-btn">Logout</button>
+    </div>
+  </header>
+
+  <!-- Tabs Navigation -->
+  <nav class="tabs">
+    <button class="tab-btn active" onclick="showTab('dashboardTab')">Dashboard</button>
+    <button class="tab-btn" onclick="showTab('qualityDocsTab')">Quality Documents</button>
+  </nav>
+
+  <!-- Main Dashboard Content -->
+  <main id="dashboardTab">
+    <!-- Top row: VIN search & VIN documents -->
+    <section class="card grid-2">
+      <div>
+        <h2>VIN Lookup</h2>
+        <input id="vinSearchInput" placeholder="Enter VIN (e.g. 1HGCM82633A123456)" />
+        <button class="btn" onclick="fetchVINData()">Search VIN</button>
+        <div id="vinData" class="box"></div>
+      </div>
+
+      <div>
+        <h2>Multiple Check Sheets (Upload)</h2>
+        <label for="uploadVin">VIN</label>
+        <input id="uploadVin" placeholder="Enter VIN" />
+        <label for="files">Select files (images/pdf) — multiple allowed</label>
+        <input id="files" type="file" multiple accept="image/*,application/pdf" />
+        <button class="btn" onclick="uploadSheets()">Upload Sheets</button>
+        <div id="uploadStatus" class="box"></div>
+        <hr />
+        <h3>Files stored for VIN</h3>
+        <input id="listVin" placeholder="Enter VIN to list files" />
+        <button class="btn ghost" onclick="listFilesForVin()">Show Files</button>
+        <div id="filesList" class="files-list box"></div>
+      </div>
+    </section>
+
+    <!-- Middle row: RSP Achievement with date-range & DPC table -->
+    <section class="card grid-2">
+      <div>
+        <h2>RSP Achievement Level (Cumulative)</h2>
+        <div class="row">
+          <button class="btn" onclick="loadRspAchievement()">Show Cumulative</button>
+          <button class="btn ghost" onclick="exportRSPToCSV()">Export CSV</button>
+          <button class="btn ghost" onclick="exportRSPToPDF()">Export PDF</button>
+          <label>From</label>
+          <input type="date" id="rspFrom" />
+        </div>
+        <div class="row">
+          <label>To</label>
+          <input type="date" id="rspTo" />
+        </div>
+        <button class="btn" onclick="loadRspAchievement()">Show Cumulative</button>
+        <div id="rspResult" class="box"></div>
+      </div>
+
+      <div>
+        <h2>DPC Monitoring</h2>
+        <button class="btn ghost" onclick="exportDPCToCSV()">Export CSV</button>
+<button class="btn ghost" onclick="exportDPCToPDF()">Export PDF</button>
+<button class="btn" style="margin-top:10px" onclick="downloadAllReports()">Download All Reports (ZIP)</button>
+
+        <table id="dpcTable">
+          <thead>
+            <tr>
+              <th>VIN</th>
+              <th>Model</th>
+              <th>DPC Target (%)</th>
+              <th>DPC Actual (%)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+    <h2>DPC Monitoring</h2>
+<div class="row">
+  <button class="btn" onclick="loadDpcFromAPI()">Load from Database</button>
+  <input type="file" id="csvFileInput" accept=".csv" onchange="loadCSVFile(event)" />
+</div>
+<button class="btn ghost" onclick="exportDPCToCSV()">Export CSV</button>
+<button class="btn ghost" onclick="exportDPCToPDF()">Export PDF</button>
+<button class="btn" style="margin-top:10px" onclick="downloadAllReports()">Download All Reports (ZIP)</button>
+<table id="dpcTable">
+  <thead>
+    <tr><th>VIN</th><th>Model</th><th>DPC Target (%)</th><th>DPC Actual (%)</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+
+    <!-- Trend charts -->
+    <section class="card">
+      <h2>DPC & RSP/SPR Trend — Last 3 Months</h2>
+      <canvas id="trendChart" height="100"></canvas>
+    </section>
+
+    <!-- Defect comparison vs last working day -->
+    <section class="card">
+      <h2>Defect Comparison (vs Last Working Day)</h2>
+      <div class="controls-inline">
+        <label>Plant Holidays (comma-separated YYYY-MM-DD)</label>
+        <input id="holidays" placeholder="2025-08-15,2025-08-18" />
+        <label>Reference Date (defaults to today)</label>
+        <input type="date" id="refDate" />
+        <button class="btn" onclick="compareDefects()">Compare</button>
+      </div>
+      <div id="defectComparison" class="box"></div>
+    </section>
+  </main>
+
+  <!-- Quality Documents Tab -->
+  <main id="qualityDocsTab" style="display:none">
+    <section class="card">
+      <h2>Quality Documents — VIN Lookup</h2>
+      <input id="qdVinInput" placeholder="Enter VIN to search" />
+      <button class="btn" onclick="searchQualityDocs()">Search</button>
+      <div id="qdResults" class="box"></div>
+    </section>
+  </main>
+
+  <footer>
+    <div>© 2025 QICS — Automotive Quality</div>
+  </footer>
+
+  <script src="mock-dms.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>
+
+<!-- Chart Section -->
+<h2>DPC Performance</h2>
+<canvas id="dpcChart" width="600" height="300"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

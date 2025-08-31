@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QICS - Dashboard</title>
+  <style>
+    /* --- Styles (Merged from style.css) --- */
+    *{box-sizing:border-box}
+    body{font-family:Inter,Segoe UI,Arial; margin:0; background:#f4f6f8; color:#102a43}
+    header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:linear-gradient(90deg,#0b3d91,#052c6b);color:#fff}
+    .header-left{display:flex;align-items:center;gap:12px}
+    .logo{height:48px}
+    .header-left h1{font-size:18px;margin:0}
+    .muted{color:#cbd5e1;font-size:13px}
+    .header-right{display:flex;align-items:center;gap:12px}
+    .welcome{font-weight:600}
+    .logout-btn{background:#ff6b6b;border:none;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer}
+    .logout-btn:hover{opacity:.9}
+
+    /* Tabs */
+    .tabs{display:flex;gap:10px;background:#fff;padding:10px 20px;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+    .tab-btn{padding:10px 16px;border:none;background:#eef2ff;color:#0b3d91;font-weight:600;border-radius:6px;cursor:pointer}
+    .tab-btn.active{background:#0b3d91;color:#fff}
+
+    /* Main */
+    main{padding:20px;max-width:1100px;margin:0 auto}
+    .card{background:#fff;padding:18px;border-radius:10px;box-shadow:0 6px 20px rgba(16,41,67,0.06);margin-bottom:18px}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .btn{background:#0b59c6;color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
+    .ghost{background:transparent;color:#0b59c6;border:1px solid #cfe0ff}
+    .row{display:flex;flex-direction:column;margin-bottom:8px}
+    .controls-inline{display:flex;flex-direction:column;gap:8px;max-width:800px}
+    input[type="text"], input[type="date"], input[type="file"], textarea{padding:8px;border-radius:8px;border:1px solid #e2e8f0;width:100%}
+    .box{margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;border:1px dashed #e6eef8}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border:1px solid #e6eef8;text-align:center}
+    th{background:#f1f6ff}
+    .files-list .file-item{display:flex;gap:10px;align-items:center;padding:8px;border-bottom:1px solid #eef4ff}
+    .files-list img{height:48px;border-radius:6px;object-fit:cover}
+    footer{text-align:center;padding:12px;color:#6b7280;font-size:13px}
+    @media(max-width:900px){.grid-2{grid-template-columns:1fr}.controls-inline{flex-direction:column}}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <img src="assets/logo.png" alt="logo" class="logo" onerror="this.style.display='none'">
+      <div>
+        <h1>Quality Information Control System</h1>
+        <div class="muted">VIN-wise Quality Data Integration</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div id="welcomeUser" class="welcome">Welcome, DemoUser</div>
+      <button id="logoutBtn" class="logout-btn" onclick="alert('Logged out!')">Logout</button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="tabs">
+    <button class="tab-btn active" onclick="showTab('dashboardTab')">Dashboard</button>
+    <button class="tab-btn" onclick="showTab('qualityDocsTab')">Quality Documents</button>
+  </nav>
+
+  <!-- Dashboard Content -->
+  <main id="dashboardTab">
+    <section class="card grid-2">
+      <div>
+        <h2>VIN Lookup</h2>
+        <input id="vinSearchInput" placeholder="Enter VIN (e.g. 1HGCM82633A123456)" />
+        <button class="btn" onclick="fetchVINData()">Search VIN</button>
+        <div id="vinData" class="box"></div>
+      </div>
+      <div>
+        <h2>Multiple Check Sheets (Upload)</h2>
+        <label for="uploadVin">VIN</label>
+        <input id="uploadVin" placeholder="Enter VIN" />
+        <label for="files">Select files (images/pdf)</label>
+        <input id="files" type="file" multiple accept="image/*,application/pdf" />
+        <button class="btn" onclick="uploadSheets()">Upload Sheets</button>
+        <div id="uploadStatus" class="box"></div>
+        <hr />
+        <h3>Files stored for VIN</h3>
+        <input id="listVin" placeholder="Enter VIN to list files" />
+        <button class="btn ghost" onclick="listFilesForVin()">Show Files</button>
+        <div id="filesList" class="files-list box"></div>
+      </div>
+    </section>
+
+    <section class="card grid-2">
+      <div>
+        <h2>RSP Achievement Level (Cumulative)</h2>
+        <div class="row"><label>From</label><input type="date" id="rspFrom" /></div>
+        <div class="row"><label>To</label><input type="date" id="rspTo" /></div>
+        <button class="btn" onclick="loadRspAchievement()">Show Cumulative</button>
+        <div id="rspResult" class="box"></div>
+      </div>
+      <div>
+        <h2>DPC Monitoring</h2>
+        <table id="dpcTable"><thead><tr><th>VIN</th><th>Model</th><th>DPC Target (%)</th><th>DPC Actual (%)</th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>DPC & RSP/SPR Trend — Last 3 Months</h2>
+      <canvas id="trendChart" height="100"></canvas>
+    </section>
+
+    <section class="card">
+      <h2>Defect Comparison (vs Last Working Day)</h2>
+      <div class="controls-inline">
+        <label>Plant Holidays (comma-separated YYYY-MM-DD)</label>
+        <input id="holidays" placeholder="2025-08-15,2025-08-18" />
+        <label>Reference Date (defaults to today)</label>
+        <input type="date" id="refDate" />
+        <button class="btn" onclick="compareDefects()">Compare</button>
+      </div>
+      <div id="defectComparison" class="box"></div>
+    </section>
+  </main>
+
+  <!-- Quality Documents -->
+  <main id="qualityDocsTab" style="display:none">
+    <section class="card">
+      <h2>Quality Documents — VIN Lookup</h2>
+      <input id="qdVinInput" placeholder="Enter VIN to search" />
+      <button class="btn" onclick="searchQualityDocs()">Search</button>
+      <div id="qdResults" class="box"></div>
+    </section>
+  </main>
+
+  <footer><div>© 2025 QICS — Automotive Quality</div></footer>
+
+  <script>
+    /* --- Mock API (mock-dms.js) --- */
+    const mockData={
+      "1HGCM82633A123456":[
+        {title:"CVIC Inspection Report",type:"PDF",url:"assets/docs/cvic_inspection.pdf"},
+        {title:"Double Check Sheet",type:"Image",url:"assets/docs/doublecheck.jpg"},
+        {title:"Port Return Sheet",type:"PDF",url:"assets/docs/portreturn.pdf"}],
+      "2HGFB2F5XEH123789":[
+        {title:"Engine Quality Report",type:"PDF",url:"assets/docs/engine_quality.pdf"},
+        {title:"Trim Inspection",type:"Image",url:"assets/docs/trim.jpg"}]
+    };
+    const originalFetch=window.fetch;
+    window.fetch=function(url,opts){
+      if(url.startsWith('/api/dms/search?vin=')){
+        const vin=decodeURIComponent(url.split('=')[1]);
+        return Promise.resolve(new Response(JSON.stringify({docs:mockData[vin]||[]}),{status:200}));
+      }
+      return originalFetch.apply(this,arguments);
+    };
+
+    /* --- Core JS (Merged script.js essentials) --- */
+    function showTab(tabId){
+      document.querySelectorAll('main').forEach(m=>m.style.display='none');
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.getElementById(tabId).style.display='block';
+      document.querySelector(`.tab-btn[onclick="showTab('${tabId}')"]`).classList.add('active');
+    }
+    function fetchVINData(){
+      const vin=document.getElementById('vinSearchInput').value.trim();
+      const container=document.getElementById('vinData');
+      container.innerHTML=vin?`<ul><li>CVIC — cvic_report.pdf</li><li>Double Check — doublecheck.jpg</li></ul>`:`<span style="color:#c0392b">Enter VIN</span>`;
+    }
+    function uploadSheets(){alert('Mock upload complete');}
+    function listFilesForVin(){document.getElementById('filesList').innerHTML='<div>Mock file list</div>';}
+    function loadRspAchievement(){document.getElementById('rspResult').innerHTML='<div>Mock RSP Data</div>';}
+    function compareDefects(){document.getElementById('defectComparison').innerHTML='<div>Mock Defect Comparison</div>';}
+    function searchQualityDocs(){
+      const vin=document.getElementById('qdVinInput').value.trim();
+      const container=document.getElementById('qdResults');
+      if(!vin){container.innerHTML='<span style="color:#c0392b">Enter VIN</span>';return;}
+      fetch(`/api/dms/search?vin=${encodeURIComponent(vin)}`).then(r=>r.json()).then(data=>{
+        container.innerHTML=data.docs.length?'<ul>'+data.docs.map(d=>`<li><b>${d.title}</b> (${d.type}) — <a href="${d.url}" target="_blank">Open</a></li>`).join('')+'</ul>':`<div>No documents found for VIN ${vin}</div>`;
+      });
+    }
+  </script>
+</body>
+</html>

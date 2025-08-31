@@ -1,0 +1,1 @@
+# QICS Backend + Frontend (FastAPI + Static HTML/JS)\n\nDeployed on Render.
